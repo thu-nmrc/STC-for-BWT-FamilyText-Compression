@@ -1,0 +1,16 @@
+STC v1.0 uses third-party libraries and source-derived resources that may be
+distributed under licenses different from the STC release code.
+
+License notice for bsc-m03 M03 model tables
+-------------------------------------------
+
+The `m03_tables.h` file is derived from the bsc-m03 project by Ilya Grebnov and
+is distributed under the GNU General Public License. The repository root keeps
+the GPL license text in `LICENSE`.
+
+License notice for libsais
+--------------------------
+
+The `libsais/` directory contains the libsais suffix-array/BWT construction
+source by Ilya Grebnov and contributors. It is distributed under the Apache
+License, Version 2.0. The license text is preserved in `libsais/LICENSE`.

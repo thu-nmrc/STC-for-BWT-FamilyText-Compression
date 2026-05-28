@@ -1,0 +1,11 @@
+* 2026-05-28 : Version 1.0.0
+  * Published the STC v1.0 source tree in a compact root-level CMake layout
+    modeled after bsc-m03.
+  * Bundled the required M03 model tables and libsais source directly in the
+    repository tree.
+  * Kept the full scored archive outside the repository as a GitHub Release
+    asset.
+
+* 2026-05-19 : Validation milestone
+  * Full enwik9 decode verification passed with SHA-256 match.
+  * Local LTCB-style total measured at 157571362 bytes.

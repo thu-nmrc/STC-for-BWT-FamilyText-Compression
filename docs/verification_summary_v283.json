@@ -1,0 +1,52 @@
+{
+  "command": "verify_ltcb_submission",
+  "started_at": "2026-05-19 23:19:25 +08:00",
+  "ended_at": "2026-05-19 23:29:42 +08:00",
+  "seconds": 616.939,
+  "archive": "output/round_v271_enwik9_full_single.tcv5",
+  "archive_bytes": 157388188,
+  "archive_sha256": "c6d4635c650c4d81194dbc310d512f3069a54676cea53c08314cad802f20cf87",
+  "decoder_zip": "output/ltcb_dcv5_decoder_only_src_v277.zip",
+  "decoder_zip_bytes": 183174,
+  "decoder_zip_sha256": "71b5de102a170b1e52797b6ea1b9b2dde2c30ff8c92d9e5060d52c0fccdd328d",
+  "local_ltcb_style_total_bytes": 157571362,
+  "bsc_m03_bwt_total_baseline_bytes": 160364392,
+  "margin_bytes": 2793030,
+  "package_entries": [
+    "README_LTCB_DECODER.md",
+    "THIRD_PARTY_NOTICES.md",
+    "dcv5d.cpp",
+    "m03_tables.h"
+  ],
+  "executable_entries": [],
+  "source_boundary_audit_issues": [],
+  "smoke": {
+    "archive": "output/round_v271_64k.tcv5",
+    "decoded_bytes": 65536,
+    "sha256_ok": true,
+    "ledger_total_matches": true
+  },
+  "truncated_archive_exit_code": 1,
+  "full": {
+    "exit_code": 0,
+    "seconds": 606.207,
+    "decoded_bytes": 1000000000,
+    "sha256_ok": true,
+    "ledger_total_matches": true
+  },
+  "checks": {
+    "package_entries_exact": true,
+    "no_executable_entries": true,
+    "source_boundary_audit_clean": true,
+    "build_exit_zero": true,
+    "smoke_decode_exit_zero": true,
+    "smoke_sha256_ok": true,
+    "smoke_ledger_total_matches": true,
+    "truncated_archive_rejected": true,
+    "score_below_bsc_m03_bwt": true,
+    "full_decode_exit_zero": true,
+    "full_sha256_ok": true,
+    "full_ledger_total_matches": true
+  },
+  "all_checks_passed": true
+}
