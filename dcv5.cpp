@@ -4,6 +4,7 @@
 #include <fstream>
 #include <iostream>
 #include <limits>
+#include <new>
 #include <numeric>
 #include <stdexcept>
 #include <string>
@@ -187,7 +188,7 @@ public:
             acc_ = 0;
             bits_ = 0;
         }
-        return data_;
+        return std::move(data_);
     }
 
 private:
@@ -2345,6 +2346,55 @@ std::vector<uint8_t> inverse_bwt_nosentinel_cpp(const std::vector<uint8_t>& bwt,
     return out;
 }
 
+std::vector<uint8_t> inverse_bwt_l_stream_cpp(const std::vector<uint8_t>& l_stream, uint64_t primary_index) {
+    if (l_stream.empty()) {
+        return {};
+    }
+    const size_t n = l_stream.size() - 1;
+    if (primary_index > n) {
+        throw std::runtime_error("primary_index out of range");
+    }
+
+    auto symbol_at = [&](size_t pos) -> uint16_t {
+        return pos == static_cast<size_t>(primary_index)
+                   ? uint16_t{0}
+                   : static_cast<uint16_t>(l_stream[pos] + 1);
+    };
+
+    std::array<uint32_t, 257> counts{};
+    for (size_t i = 0; i < l_stream.size(); ++i) {
+        ++counts[symbol_at(i)];
+    }
+
+    std::array<uint32_t, 257> first_occ{};
+    uint32_t total = 0;
+    for (size_t sym = 0; sym < first_occ.size(); ++sym) {
+        first_occ[sym] = total;
+        total += counts[sym];
+    }
+
+    std::array<uint32_t, 257> seen{};
+    std::vector<uint32_t> lf(l_stream.size());
+    for (size_t i = 0; i < l_stream.size(); ++i) {
+        const uint16_t sym = symbol_at(i);
+        lf[i] = first_occ[sym] + seen[sym]++;
+    }
+
+    std::vector<uint8_t> out;
+    out.reserve(n);
+    uint32_t idx = static_cast<uint32_t>(primary_index);
+    for (size_t i = 0; i < n; ++i) {
+        idx = lf[idx];
+        const uint16_t sym = symbol_at(idx);
+        if (sym == 0) {
+            throw std::runtime_error("unexpected sentinel during inverse BWT");
+        }
+        out.push_back(static_cast<uint8_t>(sym - 1));
+    }
+    std::reverse(out.begin(), out.end());
+    return out;
+}
+
 std::vector<uint8_t> decompress_m03_block(const std::vector<uint8_t>& blob,
                                           M03LStream* meta = nullptr,
                                           bool primary_bound_inclusive = false) {
@@ -2352,13 +2402,7 @@ std::vector<uint8_t> decompress_m03_block(const std::vector<uint8_t>& blob,
     if (decoded.l_stream.size() != decoded.original_size + 1) {
         throw std::runtime_error("decoded L-stream length mismatch");
     }
-    std::vector<uint8_t> bwt;
-    bwt.reserve(static_cast<size_t>(decoded.original_size));
-    bwt.insert(bwt.end(), decoded.l_stream.begin(), decoded.l_stream.begin() + static_cast<std::ptrdiff_t>(decoded.primary_index));
-    bwt.insert(bwt.end(),
-               decoded.l_stream.begin() + static_cast<std::ptrdiff_t>(decoded.primary_index + 1),
-               decoded.l_stream.end());
-    auto out = inverse_bwt_nosentinel_cpp(bwt, decoded.primary_index);
+    auto out = inverse_bwt_l_stream_cpp(decoded.l_stream, decoded.primary_index);
     if (out.size() != decoded.original_size) {
         throw std::runtime_error("inverse BWT output length mismatch");
     }
@@ -2402,7 +2446,7 @@ std::vector<uint8_t> compress_m03_block(const std::vector<uint8_t>& data,
         write_varint(0, out);
         return out;
     }
-    const auto transformed = bwt_transform_libsais(data);
+    auto transformed = bwt_transform_libsais(data);
     std::vector<uint64_t> root_frequencies(256, 0);
     for (uint8_t byte : transformed.bwt) {
         root_frequencies[byte] += 1;
@@ -2417,6 +2461,7 @@ std::vector<uint8_t> compress_m03_block(const std::vector<uint8_t>& data,
     std::copy(transformed.bwt.begin() + static_cast<std::ptrdiff_t>(primary),
               transformed.bwt.end(),
               l_stream.begin() + static_cast<std::ptrdiff_t>(primary + 1));
+    std::vector<uint8_t>().swap(transformed.bwt);
 
     ArithmeticEncoder encoder;
     encoder.encode(0, 1, 2);
@@ -3586,6 +3631,11 @@ int main(int argc, char** argv) {
         }
         std::cerr << "unknown command: " << command << "\n";
         return 2;
+    } catch (const std::bad_alloc&) {
+        std::cerr << "error: out of memory while running STC. "
+                  << "Use a machine with more available RAM or a lower-memory build; "
+                  << "chunked mode lowers compression ratio because it loses cross-block context.\n";
+        return 1;
     } catch (const std::exception& exc) {
         std::cerr << "error: " << exc.what() << "\n";
         return 1;
